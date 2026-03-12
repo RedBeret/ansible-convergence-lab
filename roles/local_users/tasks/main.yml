@@ -1,0 +1,13 @@
+---
+- name: Apply local users
+  ansible.builtin.uri:
+    url: "{{ device_api_url }}/v1/device/local-users"
+    method: PUT
+    body_format: json
+    body:
+      local_users: "{{ desired_users }}"
+    return_content: true
+    timeout: "{{ request_timeout_seconds }}"
+  register: local_users_result
+  changed_when: local_users_result.json.changed | default(false)
+

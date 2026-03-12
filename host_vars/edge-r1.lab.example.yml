@@ -1,0 +1,6 @@
+device_api_url: "{{ lookup('env', 'LAB_SIMULATOR_URL') | default('http://simulator:8080', true) }}"
+device_mgmt_ip: 198.51.100.10
+device_platform: cli-device-sim
+device_serial: SIM-EDGE-0001
+device_site: lab-dc1
+last_known_good_path: /workspace/backups/last-known-good/edge-r1.lab.example.json

@@ -1,0 +1,7 @@
+all:
+  children:
+    synthetic_devices:
+      hosts:
+        edge-r1.lab.example:
+          ansible_connection: local
+

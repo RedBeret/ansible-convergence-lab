@@ -1,0 +1,36 @@
+---
+- name: Deploy desired synthetic config
+  hosts: synthetic_devices
+  gather_facts: false
+  roles:
+    - role: common_base
+    - role: local_users
+    - role: interfaces
+    - role: ssh_access
+  tasks:
+    - name: Save startup config
+      ansible.builtin.uri:
+        url: "{{ device_api_url }}/v1/device/startup/save"
+        method: POST
+        body_format: json
+        body: {}
+        return_content: true
+        timeout: "{{ request_timeout_seconds }}"
+      register: startup_save
+      changed_when: startup_save.json.changed | default(false)
+
+    - name: Fetch post-deploy state
+      ansible.builtin.uri:
+        url: "{{ device_api_url }}/v1/device/config"
+        method: GET
+        return_content: true
+        timeout: "{{ request_timeout_seconds }}"
+      register: deployed_state
+
+    - name: Write deploy report
+      delegate_to: localhost
+      ansible.builtin.copy:
+        dest: "{{ reports_dir }}/deploy-{{ inventory_hostname }}.json"
+        content: "{{ {'host': inventory_hostname, 'startup_saved': (deployed_state.json.state.last_saved_at is not none), 'state': deployed_state.json.state} | to_nice_json }}"
+        mode: "0644"
+

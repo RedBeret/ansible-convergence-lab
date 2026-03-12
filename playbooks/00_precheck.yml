@@ -1,0 +1,68 @@
+---
+- name: Precheck synthetic lab
+  hosts: synthetic_devices
+  gather_facts: false
+  tasks:
+    - name: Ensure artifact directories exist
+      delegate_to: localhost
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: directory
+        mode: "0755"
+      loop:
+        - "{{ backup_dir }}"
+        - "{{ backup_dir }}/last-known-good"
+        - "{{ reports_dir }}"
+        - "{{ reports_dir }}/logs"
+        - "{{ rendered_dir }}"
+
+    - name: Build expected running config
+      ansible.builtin.import_tasks: includes/build_expected_state.yml
+
+    - name: Validate synthetic-only inventory values
+      ansible.builtin.assert:
+        that:
+          - inventory_hostname is match('^[a-z0-9-]+\\.lab\\.example$')
+          - desired_hostname is match('^[a-z0-9-]+\\.lab\\.example$')
+          - device_mgmt_ip is match('^(192\\.0\\.2\\.|198\\.51\\.100\\.|203\\.0\\.113\\.)')
+          - device_serial is match('^SIM-[A-Z0-9-]+$')
+          - desired_users | length > 0
+          - desired_users | map(attribute='username') | list | join(',') is search('ops_')
+          - desired_users | map(attribute='ssh_key') | list | join(',') is search('example.invalid')
+
+    - name: Wait for simulator health
+      ansible.builtin.uri:
+        url: "{{ device_api_url }}/healthz"
+        method: GET
+        return_content: true
+        timeout: "{{ request_timeout_seconds }}"
+      register: simulator_health
+      retries: "{{ health_retries }}"
+      delay: "{{ health_delay_seconds }}"
+      until:
+        - simulator_health.status == 200
+        - simulator_health.json.status == "ok"
+
+    - name: Fetch simulator facts
+      ansible.builtin.uri:
+        url: "{{ device_api_url }}/v1/device/facts"
+        method: GET
+        return_content: true
+        timeout: "{{ request_timeout_seconds }}"
+      register: device_facts
+
+    - name: Assert simulator facts match synthetic host vars
+      ansible.builtin.assert:
+        that:
+          - device_facts.json.serial == device_serial
+          - device_facts.json.platform == device_platform
+          - device_facts.json.site == device_site
+          - device_facts.json.mgmt_ip == device_mgmt_ip
+
+    - name: Write precheck report
+      delegate_to: localhost
+      ansible.builtin.copy:
+        dest: "{{ reports_dir }}/precheck-{{ inventory_hostname }}.json"
+        content: "{{ {'host': inventory_hostname, 'health': simulator_health.json, 'facts': device_facts.json, 'expected_running_config': expected_running_config} | to_nice_json }}"
+        mode: "0644"
+

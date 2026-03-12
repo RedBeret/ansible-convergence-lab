@@ -1,0 +1,31 @@
+hostname {{ desired_hostname }}
+banner motd ^{{ lab_banner }}^
+! synthetic serial {{ device_serial }}
+! synthetic management-ip {{ device_mgmt_ip }}
+!
+{% for user in desired_users %}
+username {{ user.username }} role {{ user.role }} ssh-key {{ user.ssh_key }}
+{% endfor %}
+!
+{% for interface in desired_interfaces %}
+interface {{ interface.name }}
+ description {{ interface.description }}
+ ip address {{ interface.ipv4 }}
+{% if interface.enabled %}
+ no shutdown
+{% else %}
+ shutdown
+{% endif %}
+!
+{% endfor %}
+{% if desired_ssh.enabled %}
+ip ssh port {{ desired_ssh.listen_port }}
+{% for subnet in desired_ssh.allowed_subnets %}
+ip ssh allow {{ subnet }}
+{% endfor %}
+{% else %}
+no ip ssh server
+{% endif %}
+!
+end
+

@@ -1,0 +1,13 @@
+---
+- name: Apply interface descriptions and IPs
+  ansible.builtin.uri:
+    url: "{{ device_api_url }}/v1/device/interfaces"
+    method: PUT
+    body_format: json
+    body:
+      interfaces: "{{ desired_interfaces }}"
+    return_content: true
+    timeout: "{{ request_timeout_seconds }}"
+  register: interfaces_result
+  changed_when: interfaces_result.json.changed | default(false)
+

@@ -1,0 +1,44 @@
+---
+- name: Backup current synthetic config
+  hosts: synthetic_devices
+  gather_facts: false
+  vars:
+    backup_timestamp: "{{ lookup('pipe', 'date -u +%Y%m%dT%H%M%SZ') }}"
+    backup_captured_at: "{{ lookup('pipe', 'date -u +%Y-%m-%dT%H:%M:%SZ') }}"
+  tasks:
+    - name: Fetch current state
+      ansible.builtin.uri:
+        url: "{{ device_api_url }}/v1/device/config"
+        method: GET
+        return_content: true
+        timeout: "{{ request_timeout_seconds }}"
+      register: current_state
+
+    - name: Fetch running config text
+      ansible.builtin.uri:
+        url: "{{ device_api_url }}/v1/device/running-config"
+        method: GET
+        return_content: true
+        timeout: "{{ request_timeout_seconds }}"
+      register: current_cli
+
+    - name: Write JSON backup
+      delegate_to: localhost
+      ansible.builtin.copy:
+        dest: "{{ backup_dir }}/{{ inventory_hostname }}-{{ backup_timestamp }}.json"
+        content: "{{ {'host': inventory_hostname, 'snapshot_name': backup_timestamp, 'captured_at': backup_captured_at, 'state': current_state.json.state} | to_nice_json }}"
+        mode: "0644"
+
+    - name: Write CLI backup
+      delegate_to: localhost
+      ansible.builtin.copy:
+        dest: "{{ backup_dir }}/{{ inventory_hostname }}-{{ backup_timestamp }}.cfg"
+        content: "{{ current_cli.json.running_config }}"
+        mode: "0644"
+
+    - name: Write backup report
+      delegate_to: localhost
+      ansible.builtin.copy:
+        dest: "{{ reports_dir }}/backup-{{ inventory_hostname }}.json"
+        content: "{{ {'host': inventory_hostname, 'backup_timestamp': backup_timestamp, 'json_backup': backup_dir ~ '/' ~ inventory_hostname ~ '-' ~ backup_timestamp ~ '.json', 'cli_backup': backup_dir ~ '/' ~ inventory_hostname ~ '-' ~ backup_timestamp ~ '.cfg'} | to_nice_json }}"
+        mode: "0644"

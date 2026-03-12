@@ -1,0 +1,32 @@
+---
+- name: Detect drift in synthetic config
+  hosts: synthetic_devices
+  gather_facts: false
+  tasks:
+    - name: Build expected running config
+      ansible.builtin.import_tasks: includes/build_expected_state.yml
+
+    - name: Fetch current state
+      ansible.builtin.uri:
+        url: "{{ device_api_url }}/v1/device/config"
+        method: GET
+        return_content: true
+        timeout: "{{ request_timeout_seconds }}"
+      register: current_state
+
+    - name: Determine drift
+      ansible.builtin.set_fact:
+        drift_detected: "{{ current_state.json.state.running_config != expected_running_config }}"
+
+    - name: Write drift report
+      delegate_to: localhost
+      ansible.builtin.copy:
+        dest: "{{ reports_dir }}/drift-{{ inventory_hostname }}.json"
+        content: "{{ {'host': inventory_hostname, 'drift_detected': drift_detected, 'expected': expected_running_config, 'actual': current_state.json.state.running_config} | to_nice_json }}"
+        mode: "0644"
+
+    - name: Fail when drift is detected
+      ansible.builtin.fail:
+        msg: "Drift detected for {{ inventory_hostname }}."
+      when: drift_detected | bool
+

@@ -1,0 +1,39 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  docker-lab-test:
+    name: Docker lab test
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      DOCKER_CONFIG: ${{ github.workspace }}/.docker-config
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Prepare Docker config
+        run: mkdir -p "$DOCKER_CONFIG"
+
+      - name: Validate Compose config
+        run: docker compose config
+
+      - name: Build containers
+        run: docker compose build simulator ansible
+
+      - name: Start simulator
+        run: docker compose up -d simulator
+
+      - name: Run test suite
+        run: docker compose run --rm -T ansible make test
+
+      - name: Tear down
+        if: always()
+        run: docker compose down --remove-orphans --volumes

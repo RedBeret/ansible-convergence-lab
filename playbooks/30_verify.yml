@@ -1,0 +1,57 @@
+---
+- name: Verify desired synthetic config
+  hosts: synthetic_devices
+  gather_facts: false
+  vars:
+    verification_timestamp: "{{ lookup('pipe', 'date -u +%Y-%m-%dT%H:%M:%SZ') }}"
+  tasks:
+    - name: Build expected running config
+      ansible.builtin.import_tasks: includes/build_expected_state.yml
+
+    - name: Fetch current state
+      ansible.builtin.uri:
+        url: "{{ device_api_url }}/v1/device/config"
+        method: GET
+        return_content: true
+        timeout: "{{ request_timeout_seconds }}"
+      register: current_state
+
+    - name: Fetch current CLI config
+      ansible.builtin.uri:
+        url: "{{ device_api_url }}/v1/device/running-config"
+        method: GET
+        return_content: true
+        timeout: "{{ request_timeout_seconds }}"
+      register: current_cli
+
+    - name: Assert hostname and rendered state
+      ansible.builtin.assert:
+        that:
+          - current_state.json.state.running_config.hostname == desired_hostname
+          - current_state.json.state.running_config.banner == lab_banner
+          - current_state.json.state.running_config.local_users == expected_running_config.local_users
+          - current_state.json.state.running_config.interfaces == expected_running_config.interfaces
+          - current_state.json.state.running_config.ssh == expected_running_config.ssh
+          - current_state.json.state.startup_config == current_state.json.state.running_config
+          - current_state.json.state.last_saved_at is not none
+
+    - name: Save last-known-good JSON backup
+      delegate_to: localhost
+      ansible.builtin.copy:
+        dest: "{{ last_known_good_path }}"
+        content: "{{ {'host': inventory_hostname, 'snapshot_name': 'last-known-good', 'captured_at': verification_timestamp, 'state': current_state.json.state} | to_nice_json }}"
+        mode: "0644"
+
+    - name: Save last-known-good CLI config
+      delegate_to: localhost
+      ansible.builtin.copy:
+        dest: "{{ backup_dir }}/last-known-good/{{ inventory_hostname }}.cfg"
+        content: "{{ current_cli.json.running_config }}"
+        mode: "0644"
+
+    - name: Write verification report
+      delegate_to: localhost
+      ansible.builtin.copy:
+        dest: "{{ reports_dir }}/verify-{{ inventory_hostname }}.json"
+        content: "{{ {'host': inventory_hostname, 'verified': true, 'last_known_good': last_known_good_path, 'state': current_state.json.state} | to_nice_json }}"
+        mode: "0644"

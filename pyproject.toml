@@ -1,0 +1,58 @@
+[build-system]
+requires = ["hatchling>=1.27.0"]
+build-backend = "hatchling.build"
+
+[project]
+name = "ansible-convergence-lab"
+version = "0.1.0"
+description = "Windows-first synthetic Ansible convergence lab"
+readme = "README.md"
+requires-python = ">=3.12,<3.13"
+authors = [
+  { name = "RedBeret" },
+]
+keywords = [
+  "ansible",
+  "windows",
+  "powershell",
+  "docker",
+  "network-automation",
+  "training-lab",
+]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Intended Audience :: Developers",
+  "Intended Audience :: Education",
+  "Operating System :: Microsoft :: Windows",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.12",
+  "Topic :: Education",
+  "Topic :: Software Development :: Testing",
+  "Topic :: System :: Systems Administration",
+]
+dependencies = [
+  "ansible-core==2.17.6",
+  "fastapi==0.115.6",
+  "pydantic==2.10.6",
+  "pytest==8.3.4",
+  "typer==0.15.1",
+  "uvicorn[standard]==0.34.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/RedBeret/ansible-convergence-lab"
+Repository = "https://github.com/RedBeret/ansible-convergence-lab"
+Issues = "https://github.com/RedBeret/ansible-convergence-lab/issues"
+Documentation = "https://github.com/RedBeret/ansible-convergence-lab#readme"
+
+[project.scripts]
+labctl = "aclab.labctl:main"
+simulator-cli = "aclab.simulator:cli_main"
+simulator-server = "aclab.simulator:server_main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/aclab"]
+
+[tool.pytest.ini_options]
+minversion = "8.0"
+testpaths = ["tests"]

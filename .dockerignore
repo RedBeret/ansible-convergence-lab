@@ -1,0 +1,10 @@
+.git
+.gitignore
+.docker-config
+backups
+reports
+rendered
+state
+tests/__pycache__
+src/__pycache__
+

@@ -1,0 +1,13 @@
+---
+- name: Apply SSH access policy
+  ansible.builtin.uri:
+    url: "{{ device_api_url }}/v1/device/ssh"
+    method: PUT
+    body_format: json
+    body:
+      ssh: "{{ desired_ssh }}"
+    return_content: true
+    timeout: "{{ request_timeout_seconds }}"
+  register: ssh_result
+  changed_when: ssh_result.json.changed | default(false)
+

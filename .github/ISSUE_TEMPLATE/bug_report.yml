@@ -1,0 +1,65 @@
+name: Bug report
+description: Report a problem with the demo path, docs, simulator, or automation flow
+title: "[Bug]: "
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for filing a bug.
+
+        Please keep examples synthetic only. Do not include real credentials, real hostnames, or customer data.
+  - type: input
+    id: summary
+    attributes:
+      label: Summary
+      description: What broke?
+      placeholder: Demo fails during verify after drift injection
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - PowerShell wrappers
+        - Docker runtime
+        - WSL runtime
+        - Simulator
+        - Ansible playbooks or roles
+        - Docs
+        - Tests
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: Share the smallest synthetic repro you can
+      placeholder: |
+        1. Run pwsh ./scripts/demo.ps1 -Runtime docker -Build
+        2. Observe failure during...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: Share only non-sensitive environment details
+      placeholder: Windows 11, PowerShell 7.5, Docker Desktop 29.x
+    validations:
+      required: false
+

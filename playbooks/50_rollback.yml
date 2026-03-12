@@ -1,0 +1,45 @@
+---
+- name: Roll back to last-known-good
+  hosts: synthetic_devices
+  gather_facts: false
+  tasks:
+    - name: Check last-known-good backup exists
+      delegate_to: localhost
+      ansible.builtin.stat:
+        path: "{{ last_known_good_path }}"
+      register: last_known_good_file
+
+    - name: Assert last-known-good backup exists
+      ansible.builtin.assert:
+        that:
+          - last_known_good_file.stat.exists
+        fail_msg: "No last-known-good backup exists. Run verify after a successful deploy before rollback."
+
+    - name: Read last-known-good backup
+      delegate_to: localhost
+      ansible.builtin.slurp:
+        src: "{{ last_known_good_path }}"
+      register: rollback_payload
+
+    - name: Parse last-known-good backup
+      ansible.builtin.set_fact:
+        rollback_backup: "{{ rollback_payload.content | b64decode | from_json }}"
+
+    - name: Restore last-known-good state
+      ansible.builtin.uri:
+        url: "{{ device_api_url }}/v1/device/restore"
+        method: POST
+        headers:
+          Content-Type: application/json
+        body: "{{ {'backup': rollback_backup} | to_json }}"
+        return_content: true
+        timeout: "{{ request_timeout_seconds }}"
+      register: rollback_result
+      changed_when: rollback_result.json.changed | default(false)
+
+    - name: Write rollback report
+      delegate_to: localhost
+      ansible.builtin.copy:
+        dest: "{{ reports_dir }}/rollback-{{ inventory_hostname }}.json"
+        content: "{{ {'host': inventory_hostname, 'restored_from': last_known_good_path, 'result': rollback_result.json} | to_nice_json }}"
+        mode: "0644"

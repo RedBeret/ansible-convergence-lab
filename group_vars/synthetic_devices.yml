@@ -1,0 +1,36 @@
+backup_dir: /workspace/backups
+reports_dir: /workspace/reports
+rendered_dir: /workspace/rendered
+request_timeout_seconds: 10
+health_retries: 10
+health_delay_seconds: 2
+
+desired_hostname: edge-r1.lab.example
+lab_banner: Authorized synthetic use only. Training lab.
+desired_users:
+  - username: ops_alice
+    role: netadmin
+    ssh_key: ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIFakeTrainingKeyAlice111111111111111 ops_alice@example.invalid
+  - username: ops_bob
+    role: readonly
+    ssh_key: ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIFakeTrainingKeyBob2222222222222222 ops_bob@example.invalid
+desired_interfaces:
+  - name: Ethernet1
+    description: Uplink to synthetic-spine-a
+    ipv4: 192.0.2.10/31
+    enabled: true
+  - name: Ethernet2
+    description: Transit to synthetic-fw-a
+    ipv4: 198.51.100.14/31
+    enabled: true
+  - name: Loopback0
+    description: Router ID for synthetic lab
+    ipv4: 203.0.113.10/32
+    enabled: true
+desired_ssh:
+  enabled: true
+  listen_port: 22
+  allowed_subnets:
+    - 198.51.100.0/24
+    - 203.0.113.0/24
+

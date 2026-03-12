@@ -1,0 +1,12 @@
+- name: Build expected running config
+  ansible.builtin.set_fact:
+    expected_running_config:
+      hostname: "{{ desired_hostname }}"
+      banner: "{{ lab_banner }}"
+      local_users: "{{ desired_users | sort(attribute='username') }}"
+      interfaces: "{{ desired_interfaces | sort(attribute='name') }}"
+      ssh:
+        enabled: "{{ desired_ssh.enabled }}"
+        listen_port: "{{ desired_ssh.listen_port }}"
+        allowed_subnets: "{{ desired_ssh.allowed_subnets | sort }}"
+

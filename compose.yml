@@ -1,0 +1,33 @@
+services:
+  simulator:
+    build:
+      context: .
+      dockerfile: containers/simulator/Dockerfile
+    environment:
+      PYTHONUNBUFFERED: "1"
+      SIMULATOR_DB_PATH: /var/lib/cli-device-sim/state.db
+    healthcheck:
+      test: ["CMD", "simulator-cli", "healthcheck", "--url", "http://127.0.0.1:8080/healthz", "--timeout-seconds", "2"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 3s
+    ports:
+      - "18080:8080"
+    volumes:
+      - ./state:/var/lib/cli-device-sim
+  ansible:
+    build:
+      context: .
+      dockerfile: containers/ansible/Dockerfile
+    depends_on:
+      simulator:
+        condition: service_healthy
+    environment:
+      LAB_SIMULATOR_URL: http://simulator:8080
+      LAB_WORKSPACE: /workspace
+      PYTHONUNBUFFERED: "1"
+    volumes:
+      - ./:/workspace
+    working_dir: /workspace
+

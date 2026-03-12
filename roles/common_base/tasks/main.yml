@@ -1,0 +1,39 @@
+---
+- name: Build expected running config
+  ansible.builtin.set_fact:
+    expected_running_config:
+      hostname: "{{ desired_hostname }}"
+      banner: "{{ lab_banner }}"
+      local_users: "{{ desired_users | sort(attribute='username') }}"
+      interfaces: "{{ desired_interfaces | sort(attribute='name') }}"
+      ssh:
+        enabled: "{{ desired_ssh.enabled }}"
+        listen_port: "{{ desired_ssh.listen_port }}"
+        allowed_subnets: "{{ desired_ssh.allowed_subnets | sort }}"
+
+- name: Render desired state JSON
+  delegate_to: localhost
+  ansible.builtin.copy:
+    dest: "{{ rendered_dir }}/{{ inventory_hostname }}-desired-state.json"
+    content: "{{ expected_running_config | to_nice_json }}"
+    mode: "0644"
+
+- name: Render desired CLI config
+  delegate_to: localhost
+  ansible.builtin.template:
+    src: device-config.j2
+    dest: "{{ rendered_dir }}/{{ inventory_hostname }}.cfg"
+    mode: "0644"
+
+- name: Apply baseline hostname and banner
+  ansible.builtin.uri:
+    url: "{{ device_api_url }}/v1/device/baseline"
+    method: PUT
+    body_format: json
+    body:
+      hostname: "{{ desired_hostname }}"
+      banner: "{{ lab_banner }}"
+    return_content: true
+    timeout: "{{ request_timeout_seconds }}"
+  register: baseline_result
+  changed_when: baseline_result.json.changed | default(false)
