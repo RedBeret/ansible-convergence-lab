@@ -31,7 +31,7 @@ classifiers = [
   "Topic :: System :: Systems Administration",
 ]
 dependencies = [
-  "ansible-core==2.17.6",
+  "ansible-core==2.20.3",
   "fastapi==0.115.6",
   "pydantic==2.10.6",
   "pytest==8.3.4",
