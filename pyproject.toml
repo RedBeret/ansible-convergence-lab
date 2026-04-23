@@ -32,7 +32,7 @@ classifiers = [
 ]
 dependencies = [
   "ansible-core==2.20.3",
-  "fastapi==0.135.3",
+  "fastapi==0.136.0",
   "pydantic==2.12.5",
   "pytest==9.0.2",
   "typer==0.24.1",
