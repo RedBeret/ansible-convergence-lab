@@ -31,12 +31,12 @@ classifiers = [
   "Topic :: System :: Systems Administration",
 ]
 dependencies = [
-  "ansible-core==2.21.3",
+  "ansible-core==2.21.5",
   "fastapi==0.142.2",
   "pydantic==2.13.5",
   "pytest==9.1.1",
   "typer==0.27.2",
-  "uvicorn[standard]==0.52.4",
+  "uvicorn[standard]==0.54.0",
 ]
 
 [project.urls]
